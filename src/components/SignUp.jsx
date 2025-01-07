@@ -1,7 +1,4 @@
-import {
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-} from "firebase/auth";
+import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { auth } from "../firebase";
 import { Box, Button, TextField } from "@mui/material";
 import { useState } from "react";
@@ -9,36 +6,37 @@ import { useState } from "react";
 const SignUp = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
 
-  const handleSignUp = async (email, password) => {
+  const handleSignUp = async (event, email, password) => {
+    event.preventDefault();
     try {
+      setLoading(true);
+      setError("");
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         email,
         password
       );
+
+      await updateProfile(userCredential.user, {
+        displayName: `${firstName} ${lastName}`,
+      });
+
       console.log("User signed up:", userCredential.user);
     } catch (error) {
-      console.error("Error signing up:", error.message);
-    }
-  };
-
-  const handleSignIn = async (email, password) => {
-    try {
-      const userCredential = await signInWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
-      console.log("User signed in:", userCredential.user);
-    } catch (error) {
-      console.error("Error signing in:", error.message);
+      setError(error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <Box
-      component="div"
+      component="form"
       style={{
         display: "flex",
         flexDirection: "column",
@@ -46,36 +44,57 @@ const SignUp = () => {
         justifyContent: "center",
         alignItems: "center",
       }}
+      onSubmit={(event) => handleSignUp(event, email, password)}
     >
-      <h1>Sign Up</h1>
+      <h2>Sign Up</h2>
+
+      <TextField
+        id="first-name"
+        label="First Name"
+        variant="outlined"
+        required
+        size="small"
+        value={firstName}
+        onChange={(e) => setFirstName(e.target.value)}
+      />
+
+      <TextField
+        id="last-name"
+        label="Last Name"
+        variant="outlined"
+        required
+        size="small"
+        value={lastName}
+        onChange={(e) => setLastName(e.target.value)}
+      />
 
       <TextField
         id="email-id"
         label="Email"
         variant="outlined"
         required
+        type="email"
         size="small"
+        value={email}
         onChange={(e) => setEmail(e.target.value)}
       />
 
       <TextField
-        id="password"
+        id="signup-password"
         label="Password"
         variant="outlined"
         type="password"
         required
         size="small"
+        value={password}
         onChange={(e) => setPassword(e.target.value)}
       />
 
-      <Button
-        variant="contained"
-        size="small"
-        type="submit"
-        onClick={() => handleSignUp(email, password)}
-      >
-        Submit
+      <Button variant="contained" size="small" type="submit" disabled={loading}>
+        {loading ? "Signing Up..." : "Sign Up"}
       </Button>
+
+      {error && <p>{error}</p>}
     </Box>
   );
 };
