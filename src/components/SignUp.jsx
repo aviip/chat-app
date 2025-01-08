@@ -1,7 +1,8 @@
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { auth } from "../firebase";
-import { Box, Button, TextField } from "@mui/material";
+import { auth, db } from "../firebase";
+import { Box, Button, TextField, Typography } from "@mui/material";
 import { useState } from "react";
+import { doc, setDoc } from "firebase/firestore";
 
 const SignUp = () => {
   const [email, setEmail] = useState("");
@@ -22,11 +23,15 @@ const SignUp = () => {
         password
       );
 
-      await updateProfile(userCredential.user, {
-        displayName: `${firstName} ${lastName}`,
-      });
+      const user = userCredential.user;
+      const displayName = `${firstName} ${lastName}`;
+      await updateProfile(user, { displayName });
 
-      console.log("User signed up:", userCredential.user);
+      await setDoc(doc(db, "users", user.uid), {
+        uid: user?.uid,
+        displayName,
+        email: user.email,
+      });
     } catch (error) {
       setError(error.message);
     } finally {
@@ -45,8 +50,11 @@ const SignUp = () => {
         alignItems: "center",
       }}
       onSubmit={(event) => handleSignUp(event, email, password)}
+      sx={{ mt: 1 }}
     >
-      <h2>Sign Up</h2>
+      <Typography component="h1" variant="h5">
+        Sign Up
+      </Typography>
 
       <TextField
         id="first-name"
@@ -94,7 +102,11 @@ const SignUp = () => {
         {loading ? "Signing Up..." : "Sign Up"}
       </Button>
 
-      {error && <p>{error}</p>}
+      {error && (
+        <Typography color="error" align="center">
+          {error}
+        </Typography>
+      )}
     </Box>
   );
 };

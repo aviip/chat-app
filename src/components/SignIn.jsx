@@ -1,13 +1,15 @@
 import { useState } from "react";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../firebase";
-import { Box, Button, TextField } from "@mui/material";
+import { Box, Button, TextField, Typography } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 
 const SignIn = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const navigate = useNavigate();
 
   const handleSignIn = async (e) => {
     e.preventDefault();
@@ -15,10 +17,11 @@ const SignIn = () => {
       setLoading(true);
       setError("");
       const data = await signInWithEmailAndPassword(auth, email, password);
-      console.log("data:", data);
+      if (data.user) {
+        navigate("/chat");
+      }
     } catch (error) {
-      setError("Failed to sign in");
-      console.error(error);
+      setError(error.message);
     } finally {
       setLoading(false);
     }
@@ -35,8 +38,11 @@ const SignIn = () => {
         alignItems: "center",
       }}
       onSubmit={handleSignIn}
+      sx={{ mt: 1 }}
     >
-      <h2 className="text-2xl font-bold">Sign In</h2>
+      <Typography component="h1" variant="h5">
+        Sign In
+      </Typography>
       <TextField
         id="email"
         label="Email"
@@ -63,7 +69,11 @@ const SignIn = () => {
         {loading ? "Signing In..." : "Sign In"}
       </Button>
 
-      {error && <p>{error}</p>}
+      {error && (
+        <Typography color="error" align="center">
+          {error}
+        </Typography>
+      )}
     </Box>
   );
 };
