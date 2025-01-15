@@ -19,7 +19,7 @@ const AuthForms = () => {
   const [showSignIn, setShowSignIn] = useState(false);
 
   return (
-    <Box component="div" style={{ textAlign: "center" }}>
+    <Box component="div" style={{ textAlign: "center", marginTop: "10px" }}>
       {showSignIn ? (
         <>
           <SignIn />

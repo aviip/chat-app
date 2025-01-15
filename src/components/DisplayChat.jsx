@@ -1,13 +1,5 @@
 /* eslint-disable react/prop-types */
-/* eslint-disable no-unsafe-optional-chaining */
-import {
-  Avatar,
-  Box,
-  Button,
-  Paper,
-  TextField,
-  Typography,
-} from "@mui/material";
+import { Box, Button, Paper, TextField, Typography } from "@mui/material";
 import { auth, db } from "../firebase";
 import {
   addDoc,
@@ -21,35 +13,51 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { format, isToday, isYesterday } from "date-fns";
 
-const DisplayChat = ({ currentUser, selectedUser }) => {
+const DisplayChat = ({
+  currentUser,
+  selectedUser,
+  tabValue,
+  isGroup,
+  selectedChat,
+}) => {
+  console.log("selectedChat:", selectedChat);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
 
   useEffect(() => {
     if (!currentUser?.uid || !selectedUser?.uid) return;
     const chatRoomId = [currentUser?.uid, selectedUser?.uid].sort().join("_");
+    let unsubscribe = () => {}; // Default noop unsubscribe function
 
     try {
-      const q = query(
-        collection(db, "messages"),
-        where("chatRoomId", "==", chatRoomId),
-        orderBy("createdAt")
-      );
-      const unsubscribe = onSnapshot(q, (querySnapshot) => {
-        const messagesData = querySnapshot.docs.map((doc) => {
-          return {
-            id: doc.id,
-            ...doc.data(),
-          };
-        });
+      let q;
+      if (isGroup) {
+        q = query(
+          collection(db, "messages"),
+          where("groupId", "==", selectedChat.id),
+          orderBy("createdAt")
+        );
+      } else {
+        q = query(
+          collection(db, "messages"),
+          where("chatRoomId", "==", chatRoomId),
+          orderBy("createdAt")
+        );
+      }
+
+      unsubscribe = onSnapshot(q, (querySnapshot) => {
+        const messagesData = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
         setMessages(messagesData);
       });
-
-      return () => unsubscribe();
     } catch (error) {
       console.error("Error fetching messages:", error);
     }
-  }, [currentUser, selectedUser]);
+
+    return () => unsubscribe();
+  }, [currentUser, selectedUser, isGroup, selectedChat]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -63,6 +71,14 @@ const DisplayChat = ({ currentUser, selectedUser }) => {
       displayName: auth?.currentUser.displayName,
       chatRoomId: [currentUser?.uid, selectedUser?.uid].sort().join("_"),
     };
+
+    if (isGroup) {
+      newMsg.groupId = selectedChat.id;
+    } else {
+      newMsg.chatRoomId = [currentUser?.uid, selectedUser?.uid]
+        .sort()
+        .join("_");
+    }
 
     setMessages((prev) => [...prev, newMsg]);
 
@@ -111,69 +127,73 @@ const DisplayChat = ({ currentUser, selectedUser }) => {
         bgcolor: "background.paper",
       }}
     >
-      <Paper sx={{ flex: 1, overflow: "auto", p: 2 }} elevation={1}>
-        {Object.entries(groupedMessages).map(([date, msgs]) => (
-          <Box key={date}>
-            <Typography
-              variant="caption"
-              sx={{
-                display: "block",
-                textAlign: "center",
-                my: 1,
-                color: "text.secondary",
-              }}
-            >
-              {date}
-            </Typography>
-            {msgs.map((msg) => (
-              <Box
-                key={msg.id}
-                sx={{
-                  display: "flex",
-                  justifyContent:
-                    msg.uid === auth.currentUser?.uid
-                      ? "flex-end"
-                      : "flex-start",
-                  mb: 2,
-                }}
-              >
-                <Paper
-                  elevation={1}
+      {
+        <>
+          <Paper sx={{ flex: 1, overflow: "auto", p: 2 }} elevation={1}>
+            {Object.entries(groupedMessages).map(([date, msgs]) => (
+              <Box key={date}>
+                <Typography
+                  variant="caption"
                   sx={{
-                    p: 1,
-                    bgcolor:
-                      msg.uid === auth.currentUser?.uid
-                        ? "primary.light"
-                        : "grey.200",
-                    maxWidth: "70%",
+                    display: "block",
+                    textAlign: "center",
+                    my: 1,
+                    color: "text.secondary",
                   }}
                 >
-                  <Typography variant="body1">{msg.text}</Typography>
-                </Paper>
+                  {date}
+                </Typography>
+                {msgs.map((msg) => (
+                  <Box
+                    key={msg.id}
+                    sx={{
+                      display: "flex",
+                      justifyContent:
+                        msg.uid === auth.currentUser?.uid
+                          ? "flex-end"
+                          : "flex-start",
+                      mb: 2,
+                    }}
+                  >
+                    <Paper
+                      elevation={1}
+                      sx={{
+                        p: 1,
+                        bgcolor:
+                          msg.uid === auth.currentUser?.uid
+                            ? "primary.light"
+                            : "grey.200",
+                        maxWidth: "70%",
+                      }}
+                    >
+                      <Typography variant="body1">{msg.text}</Typography>
+                    </Paper>
+                  </Box>
+                ))}
               </Box>
             ))}
+            <div ref={messagesEndRef} />
+          </Paper>
+          <Box
+            component="form"
+            onSubmit={handleSubmit}
+            sx={{ display: "flex", p: 2 }}
+          >
+            <TextField
+              fullWidth
+              variant="outlined"
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              placeholder="Type a message..."
+              sx={{ mr: 1 }}
+              size="small"
+            />
+            <Button type="submit" variant="contained" size="small">
+              Send
+            </Button>
           </Box>
-        ))}
-        <div ref={messagesEndRef} />
-      </Paper>
-      <Box
-        component="form"
-        onSubmit={handleSubmit}
-        sx={{ display: "flex", p: 2 }}
-      >
-        <TextField
-          fullWidth
-          variant="outlined"
-          value={newMessage}
-          onChange={(e) => setNewMessage(e.target.value)}
-          placeholder="Type a message..."
-          sx={{ mr: 1 }}
-          size="small"
-        />
-        <Button type="submit" variant="contained" size="small">
-          Send
-        </Button>
-      </Box>
+        </>
+      }
     </Box>
   );
 };
