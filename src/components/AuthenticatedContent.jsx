@@ -15,7 +15,6 @@ const AuthenticatedContent = () => {
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const navigate = useNavigate();
-  const firstName = user?.displayName?.split(" ")[0] || "user";
 
   const handleSignOut = async () => {
     try {
@@ -37,7 +36,6 @@ const AuthenticatedContent = () => {
       });
       setUsers(usersData);
     });
-
     return () => unsubscribe();
   }, [user]);
 
@@ -47,12 +45,13 @@ const AuthenticatedContent = () => {
       sx={{ width: "100%", maxWidth: 700, mx: "auto", textAlign: "center" }}
     >
       <Box sx={{ mb: 2 }}>
-        <Typography variant="h4" component="h1">
-          Welcome, {firstName} !
-        </Typography>
         <Grid container spacing={2}>
           <Grid item xs={4}>
-            <UserList users={users} onSelectUser={setSelectedUser} />
+            <UserList
+              users={users}
+              onSelectUser={setSelectedUser}
+              selectedUser={selectedUser}
+            />
           </Grid>
           <Grid item xs={8}>
             {selectedUser ? (
@@ -64,7 +63,13 @@ const AuthenticatedContent = () => {
             )}
           </Grid>
         </Grid>
-        <Button color="secondary" onClick={handleSignOut}>
+        <Button
+          variant="contained"
+          sx={{ marginTop: "10px" }}
+          color="secondary"
+          size="small"
+          onClick={handleSignOut}
+        >
           Sign Out
         </Button>
       </Box>

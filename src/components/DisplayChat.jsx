@@ -1,6 +1,13 @@
 /* eslint-disable react/prop-types */
 /* eslint-disable no-unsafe-optional-chaining */
-import { Box, Button, Paper, TextField, Typography } from "@mui/material";
+import {
+  Avatar,
+  Box,
+  Button,
+  Paper,
+  TextField,
+  Typography,
+} from "@mui/material";
 import { auth, db } from "../firebase";
 import {
   addDoc,
@@ -11,7 +18,8 @@ import {
   Timestamp,
   where,
 } from "firebase/firestore";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { format, isToday, isYesterday } from "date-fns";
 
 const DisplayChat = ({ currentUser, selectedUser }) => {
   const [messages, setMessages] = useState([]);
@@ -67,6 +75,32 @@ const DisplayChat = ({ currentUser, selectedUser }) => {
     }
   };
 
+  const messagesEndRef = useRef(null);
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const formatDate = (date) => {
+    if (isToday(date)) return "Today";
+    if (isYesterday(date)) return "Yesterday";
+    return format(date, "MMM dd, yyyy");
+  };
+
+  const groupedMessages = messages.reduce((acc, msg) => {
+    const messageDate = msg.createdAt.toDate();
+    const formattedDate = formatDate(messageDate);
+
+    if (!acc[formattedDate]) {
+      acc[formattedDate] = [];
+    }
+    acc[formattedDate].push(msg);
+    return acc;
+  }, {});
+
   return (
     <Box
       sx={{
@@ -78,34 +112,49 @@ const DisplayChat = ({ currentUser, selectedUser }) => {
       }}
     >
       <Paper sx={{ flex: 1, overflow: "auto", p: 2 }} elevation={1}>
-        {messages.map((msg) => (
-          <Box
-            key={msg.id}
-            sx={{
-              display: "flex",
-              justifyContent:
-                msg.uid === auth.currentUser?.uid ? "flex-end" : "flex-start",
-              mb: 2,
-            }}
-          >
-            <Paper
-              elevation={1}
+        {Object.entries(groupedMessages).map(([date, msgs]) => (
+          <Box key={date}>
+            <Typography
+              variant="caption"
               sx={{
-                p: 1,
-                bgcolor:
-                  msg.uid === auth.currentUser?.uid
-                    ? "primary.light"
-                    : "grey.200",
-                maxWidth: "70%",
+                display: "block",
+                textAlign: "center",
+                my: 1,
+                color: "text.secondary",
               }}
             >
-              <Typography variant="caption">
-                {msg?.displayName.split(" ")[0] || "user"}
-              </Typography>
-              <Typography variant="body1">{msg.text}</Typography>
-            </Paper>
+              {date}
+            </Typography>
+            {msgs.map((msg) => (
+              <Box
+                key={msg.id}
+                sx={{
+                  display: "flex",
+                  justifyContent:
+                    msg.uid === auth.currentUser?.uid
+                      ? "flex-end"
+                      : "flex-start",
+                  mb: 2,
+                }}
+              >
+                <Paper
+                  elevation={1}
+                  sx={{
+                    p: 1,
+                    bgcolor:
+                      msg.uid === auth.currentUser?.uid
+                        ? "primary.light"
+                        : "grey.200",
+                    maxWidth: "70%",
+                  }}
+                >
+                  <Typography variant="body1">{msg.text}</Typography>
+                </Paper>
+              </Box>
+            ))}
           </Box>
         ))}
+        <div ref={messagesEndRef} />
       </Paper>
       <Box
         component="form"
@@ -119,8 +168,9 @@ const DisplayChat = ({ currentUser, selectedUser }) => {
           onChange={(e) => setNewMessage(e.target.value)}
           placeholder="Type a message..."
           sx={{ mr: 1 }}
+          size="small"
         />
-        <Button type="submit" variant="contained">
+        <Button type="submit" variant="contained" size="small">
           Send
         </Button>
       </Box>

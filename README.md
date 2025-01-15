@@ -121,18 +121,8 @@ Each document represents a message:
 }
 ```
 
-## Debugging Tips
-
-- **Firestore Indexes**: Ensure that any queries with `where` and `orderBy` have the required Firestore indexes.
-- **Authentication**: Verify Firebase Authentication is correctly configured.
-- **Real-time Updates**: Check the Firestore console to ensure data is being updated as expected.
-
 ## Future Enhancements
 
 - Add group chat functionality.
 - Implement message notifications.
 - Enhance security with additional authentication options (e.g., OAuth providers).
-
-## License
-
-This project is licensed under the MIT License. Feel free to use and modify it as needed.
