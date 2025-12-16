@@ -31,12 +31,12 @@ This project focuses on clean UI, real-time messaging, and scalable frontend arc
 ## 📁 Project Structure
 
 /
-├─ app/ # Next.js App Router pages
-├─ components/ # Reusable UI components
-├─ lib/
-│ ├─ firebase.ts # Firebase configuration
-│ └─ utils.ts
-├─ hooks/ # Custom React hooks
+─ app/ # Next.js App Router pages
+─ components/ # Reusable UI components
+─ lib/
+ ├─ firebase.ts # Firebase configuration
+ └─ utils.ts
+─ hooks/ # Custom React hooks
 
 ## 🔧 Environment Variables
 
